@@ -1,202 +1,256 @@
-import pygame
+import streamlit as st
+import numpy as np
 import random
 import time
-import sys
 from search_algorithms import *
 
 # -------------------------------
-# Command-line arguments
+# Page Config & Styling
 # -------------------------------
-if len(sys.argv) != 3:
-    print("Usage: python snake.py <level> <search_algorithm>")
-    sys.exit(1)
+st.set_page_config(layout="centered")
 
-level = sys.argv[1].lower()
-search_algorithm = sys.argv[2].lower()
+# Thoda upar shift karne ke liye padding adjust
+st.markdown(
+    """
+    <style>
+        .block-container {
+            padding-top: 1.3rem;
+            padding-bottom: 0rem;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
-# Levels (% of grid as obstacles)
+st.markdown(
+    "<h1 style='text-align: left;'>🐍 AI Snake Game</h1>", unsafe_allow_html=True
+)
+
+# -------------------------------
+# Game Settings
+# -------------------------------
+WIDTH, HEIGHT = 400, 400
+CELL_SIZE = 20
+ROWS, COLS = WIDTH // CELL_SIZE, HEIGHT // CELL_SIZE
+
 LEVELS = {"level0": 0, "level1": 5, "level2": 10, "level3": 15}
-if level not in LEVELS:
-    print("Invalid level! Choose from: level0, level1, level2, level3")
-    sys.exit(1)
-
-# Algorithms mapping
 ALGORITHMS = {
     "bfs": bfs,
     "dfs": dfs,
     "ucs": ucs,
     "ids": ids,
-    "astar": astar,  # ✅ safe name
+    "astar": astar,
     "random": random_move,
     "greedy_bfs": greedy_bfs,
 }
-if search_algorithm not in ALGORITHMS:
-    print(
-        "Invalid search algorithm! Choose from: bfs, dfs, ucs, ids, astar, random, greedy_bfs"
-    )
-    sys.exit(1)
 
 # -------------------------------
-# Pygame setup
+# Sidebar controls
 # -------------------------------
-pygame.init()
+level = st.sidebar.selectbox("Choose Level", list(LEVELS.keys()), index=0)
+algorithm = st.sidebar.selectbox("Choose Algorithm", list(ALGORITHMS.keys()), index=0)
+game_time = st.sidebar.selectbox("Game Duration", [30, 60, 90], index=0)  # Timer select
+start_button = st.sidebar.button("Start / Restart Game")
 
-WIDTH, HEIGHT = 500, 500
-CELL_SIZE = 20
-WHITE, BLACK, GREEN, RED, GRAY = (
-    (255, 255, 255),
-    (0, 0, 0),
-    (0, 255, 0),
-    (255, 0, 0),
-    (128, 128, 128),
-)
-FONT = pygame.font.Font(None, 36)
+# -------------------------------
+# Session State Init
+# -------------------------------
+if "snake_body" not in st.session_state or start_button:
+    st.session_state.snake_body = [[ROWS // 2, COLS // 2]]
+    st.session_state.score = 0
+    st.session_state.start_time = time.time()
+    st.session_state.path = []
+    st.session_state.game_over = False
+    st.session_state.game_time = game_time  # store selected time
 
-ROWS, COLS = WIDTH // CELL_SIZE, HEIGHT // CELL_SIZE
+    # Obstacles
+    obstacles = set()
+    OBSTACLE_COUNT = (ROWS * COLS * LEVELS[level]) // 100
+    while len(obstacles) < OBSTACLE_COUNT:
+        o = (random.randint(0, ROWS - 1), random.randint(0, COLS - 1))
+        if o != tuple(st.session_state.snake_body[0]):
+            obstacles.add(o)
+    st.session_state.obstacles = obstacles
 
-# Snake starting position
-snake_body = [[ROWS // 2, COLS // 2]]
+    # Food
+    def generate_food():
+        while True:
+            pos = [random.randint(0, ROWS - 1), random.randint(0, COLS - 1)]
+            blocked = st.session_state.obstacles.union(
+                set(map(tuple, st.session_state.snake_body))
+            )
+            if tuple(pos) not in blocked:
+                return pos
 
-# Obstacles
-obstacles = set()
-OBSTACLE_COUNT = (ROWS * COLS * LEVELS[level]) // 100
-while len(obstacles) < OBSTACLE_COUNT:
-    obstacle = (random.randint(0, ROWS - 1), random.randint(0, COLS - 1))
-    if obstacle != tuple(snake_body[0]):
-        obstacles.add(obstacle)
+    st.session_state.food_pos = generate_food()
 
 
-# Food position generator
+# -------------------------------
+# Helper Functions
+# -------------------------------
 def generate_food():
     while True:
         pos = [random.randint(0, ROWS - 1), random.randint(0, COLS - 1)]
-        blocked = obstacles.union(set(map(tuple, snake_body)))
+        blocked = st.session_state.obstacles.union(
+            set(map(tuple, st.session_state.snake_body))
+        )
         if tuple(pos) not in blocked:
             return pos
 
 
-# Initial food
-food_pos = generate_food()
-
-# Timer
-TIME_LIMIT = 30
-start_time = time.time()
-
-# Pygame window
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption(
-    f"AI Snake Game ({search_algorithm.upper()} - {level.upper()})"
-)
-
-clock = pygame.time.Clock()
-score = 0
-
-
-# -------------------------------
-# Game Over function
-# -------------------------------
-def game_over():
-    my_font = pygame.font.SysFont("times new roman", 50)
-    game_over_surface = my_font.render("Your Score is : " + str(score), True, RED)
-    game_over_rect = game_over_surface.get_rect()
-    game_over_rect.midtop = (WIDTH / 2, HEIGHT / 4)
-    screen.blit(game_over_surface, game_over_rect)
-    pygame.display.flip()
-    print("Score: ", score)
-    time.sleep(1)
-    pygame.quit()
-    quit()
-
-
-# -------------------------------
-# Main loop
-# -------------------------------
-running = True
-path = []
-
-while running:
-    screen.fill(BLACK)
-
-    # Timer
-    elapsed_time = time.time() - start_time
-    time_left = max(0, TIME_LIMIT - int(elapsed_time))
-    if time_left == 0:
-        running = False
-        game_over()
+def step_game():
+    snake_body = st.session_state.snake_body
+    food_pos = st.session_state.food_pos
+    obstacles = st.session_state.obstacles
+    path = st.session_state.path
 
     snake_pos = snake_body[0]
 
-    # Pathfinding
     if not path:
-        # Snake body (except head) + obstacles treated as walls
         blocked = obstacles.union(set(map(tuple, snake_body[1:])))
-        path = ALGORITHMS[search_algorithm](
+        path = ALGORITHMS[algorithm](
             tuple(snake_pos), tuple(food_pos), blocked, ROWS, COLS
         )
+        st.session_state.path = path
 
-    # Snake movement
     if path:
         move = path.pop(0)
         new_head = [snake_pos[0] + move[0], snake_pos[1] + move[1]]
         snake_body.insert(0, new_head)
 
         if new_head == food_pos:
-            # Ate food → grow
-            score += 1
-            food_pos = generate_food()
-            path = []  # reset path
+            st.session_state.score += 1
+            st.session_state.food_pos = generate_food()
+            st.session_state.path = []
         else:
-            # Normal move → remove tail
             snake_body.pop()
 
-    # Collision check
-    head = snake_body[0]
-    if (
-        head[0] < 0
-        or head[0] >= ROWS
-        or head[1] < 0
-        or head[1] >= COLS
-        or tuple(head) in obstacles
-        or head in snake_body[1:]  # hit itself
-    ):
-        running = False
-        game_over()
+        # Collision check
+        head = snake_body[0]
+        if (
+            head[0] < 0
+            or head[0] >= ROWS
+            or head[1] < 0
+            or head[1] >= COLS
+            or tuple(head) in obstacles
+            or head in snake_body[1:]
+        ):
+            st.session_state.game_over = True
+            return
 
-    # Draw snake
-    for block in snake_body:
-        pygame.draw.rect(
-            screen,
-            GREEN,
-            (block[1] * CELL_SIZE, block[0] * CELL_SIZE, CELL_SIZE, CELL_SIZE),
-        )
 
-    # Draw food
-    pygame.draw.rect(
-        screen,
-        RED,
-        (food_pos[1] * CELL_SIZE, food_pos[0] * CELL_SIZE, CELL_SIZE, CELL_SIZE),
+# -------------------------------
+# Timer & Game Step
+# -------------------------------
+time_left = max(
+    0, st.session_state.game_time - int(time.time() - st.session_state.start_time)
+)
+
+if time_left == 0:
+    st.session_state.game_over = True
+elif not st.session_state.game_over:
+    step_game()
+
+# -------------------------------
+# Render Frame
+# -------------------------------
+frame = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)
+
+# Snake = Green
+for block in st.session_state.snake_body:
+    r, c = block
+    frame[r * CELL_SIZE : (r + 1) * CELL_SIZE, c * CELL_SIZE : (c + 1) * CELL_SIZE] = (
+        0,
+        255,
+        0,
     )
 
-    # Draw obstacles
-    for obs in obstacles:
-        pygame.draw.rect(
-            screen, GRAY, (obs[1] * CELL_SIZE, obs[0] * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-        )
+# Food = Red
+fr, fc = st.session_state.food_pos
+frame[fr * CELL_SIZE : (fr + 1) * CELL_SIZE, fc * CELL_SIZE : (fc + 1) * CELL_SIZE] = (
+    255,
+    0,
+    0,
+)
 
-    # HUD
-    timer_text = FONT.render(f"Time Left: {time_left}s", True, WHITE)
-    score_text = FONT.render(f"Score: {score}", True, WHITE)
-    screen.blit(timer_text, (20, 20))
-    screen.blit(score_text, (20, 50))
+# Obstacles = Gray
+for obs in st.session_state.obstacles:
+    r, c = obs
+    frame[r * CELL_SIZE : (r + 1) * CELL_SIZE, c * CELL_SIZE : (c + 1) * CELL_SIZE] = (
+        128,
+        128,
+        128,
+    )
 
-    pygame.display.update()
-    clock.tick(7)  # speed
+# Center align game frame
+st.markdown(
+    "<div style='text-align: center; position: relative;'>", unsafe_allow_html=True
+)
+st.image(frame, channels="RGB")
 
-    # Events
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-            game_over()
+# Agar game over hai toh overlay show karo
+if st.session_state.game_over:
+    game_over_html = f"""
+    <div style="
+        position: absolute;
+        top: 40%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: rgba(0,0,0,0.7);
+        color: white;
+        padding: 30px 50px;
+        border-radius: 15px;
+        font-size: 24px;
+        font-weight: bold;
+    ">
+        Game Over! Final Score: {st.session_state.score}
+    </div>
+    """
+    st.markdown(game_over_html, unsafe_allow_html=True)
 
-pygame.quit()
-print("Score: ", score)
+st.markdown("</div>", unsafe_allow_html=True)
+
+# -------------------------------
+# HUD (Fixed Right Side)
+# -------------------------------
+hud_html = f"""
+<div style="
+    position: fixed;
+    top: 50px;
+    right: 20px;
+    background-color: white;
+    padding: 60px 60px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    z-index: 9999;
+    text-align: center;
+">
+    <div style="margin-bottom: 10px;">
+        <h4 style="margin:0; color:#333;">Score</h4>
+        <p style="margin:0; font-size:20px; font-weight:bold; color:green;">
+            {st.session_state.score}
+        </p>
+    </div>
+    <div style="margin-bottom: 10px;">
+        <h4 style="margin:0; color:#333;">Time Left</h4>
+        <p style="margin:0; font-size:20px; font-weight:bold; color:red;">
+            {time_left}s
+        </p>
+    </div>
+    <div>
+        <h4 style="margin:0; color:#333;">Level</h4>
+        <p style="margin:0; font-size:20px; font-weight:bold; color:blue;">
+            {level}
+        </p>
+    </div>
+</div>
+"""
+
+st.markdown(hud_html, unsafe_allow_html=True)
+
+# -------------------------------
+# Refresh Logic
+# -------------------------------
+if not st.session_state.game_over:
+    time.sleep(0.2)  # snake ki speed control
+    st.rerun()
