@@ -1,4 +1,6 @@
 # 🐍 Snake AI Game
+<img width="636" height="636" alt="snake" src="https://github.com/user-attachments/assets/fc5f25eb-cb77-4b16-9f71-2e7f8d7443eb" />
+
 
 An **AI-powered Snake Game** built with **Python** and **Pygame**.  
 The snake automatically plays the game using different **search algorithms** like BFS, DFS, UCS, IDS, Greedy Best First Search, A\*, and Random moves.
