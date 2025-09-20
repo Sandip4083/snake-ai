@@ -2,14 +2,13 @@ import streamlit as st
 import numpy as np
 import random
 import time
+from PIL import Image
 from search_algorithms import *
 
 # -------------------------------
 # Page Config & Styling
 # -------------------------------
 st.set_page_config(layout="centered")
-
-# Thoda upar shift karne ke liye padding adjust
 st.markdown(
     """
     <style>
@@ -21,15 +20,14 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-
 st.markdown(
-    "<h1 style='text-align: left;'>🐍 AI Snake Game</h1>", unsafe_allow_html=True
+    "<h1 style='text-align:left;'>🐍 AI Snake Game</h1>", unsafe_allow_html=True
 )
 
 # -------------------------------
 # Game Settings
 # -------------------------------
-WIDTH, HEIGHT = 400, 400
+WIDTH, HEIGHT = 500, 500
 CELL_SIZE = 20
 ROWS, COLS = WIDTH // CELL_SIZE, HEIGHT // CELL_SIZE
 
@@ -45,11 +43,11 @@ ALGORITHMS = {
 }
 
 # -------------------------------
-# Sidebar controls
+# Sidebar Controls
 # -------------------------------
 level = st.sidebar.selectbox("Choose Level", list(LEVELS.keys()), index=0)
 algorithm = st.sidebar.selectbox("Choose Algorithm", list(ALGORITHMS.keys()), index=0)
-game_time = st.sidebar.selectbox("Game Duration", [30, 60, 90], index=0)  # Timer select
+game_time = st.sidebar.selectbox("Game Duration", [30, 60, 90], index=0)
 start_button = st.sidebar.button("Start / Restart Game")
 
 # -------------------------------
@@ -61,7 +59,7 @@ if "snake_body" not in st.session_state or start_button:
     st.session_state.start_time = time.time()
     st.session_state.path = []
     st.session_state.game_over = False
-    st.session_state.game_time = game_time  # store selected time
+    st.session_state.game_time = game_time
 
     # Obstacles
     obstacles = set()
@@ -72,7 +70,7 @@ if "snake_body" not in st.session_state or start_button:
             obstacles.add(o)
     st.session_state.obstacles = obstacles
 
-    # Food
+    # Food generator
     def generate_food():
         while True:
             pos = [random.randint(0, ROWS - 1), random.randint(0, COLS - 1)]
@@ -103,7 +101,6 @@ def step_game():
     food_pos = st.session_state.food_pos
     obstacles = st.session_state.obstacles
     path = st.session_state.path
-
     snake_pos = snake_body[0]
 
     if not path:
@@ -182,75 +179,77 @@ for obs in st.session_state.obstacles:
         128,
     )
 
-# Center align game frame
-st.markdown(
-    "<div style='text-align: center; position: relative;'>", unsafe_allow_html=True
-)
-st.image(frame, channels="RGB")
+# -------------------------------
+# Responsive Layout: Frame + HUD
+# -------------------------------
+col1, col2 = st.columns([2, 1], gap="large")
 
-# Agar game over hai toh overlay show karo
-if st.session_state.game_over:
-    game_over_html = f"""
+# Left: Game Frame
+with col1:
+    st.markdown(
+        "<div style='text-align:center; position:relative;'>", unsafe_allow_html=True
+    )
+    st.image(Image.fromarray(frame), channels="RGB")  # Dynamic frame, no media ID
+
+    if st.session_state.game_over:
+        game_over_html = f"""
+        <div style="
+            position:absolute;
+            top:50%;
+            left:50%;
+            transform:translate(-50%, -50%);
+            background-color:rgba(0,0,0,0.7);
+            color:white;
+            padding:25px 40px;
+            border-radius:15px;
+            font-size:24px;
+            font-weight:bold;
+            text-align:center;
+        ">
+            Game Over!<br>Final Score: {st.session_state.score}
+        </div>
+        """
+        st.markdown(game_over_html, unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# Right: HUD
+with col2:
+    hud_html = f"""
     <div style="
-        position: absolute;
-        top: 40%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background-color: rgba(0,0,0,0.7);
-        color: white;
-        padding: 30px 50px;
-        border-radius: 15px;
-        font-size: 24px;
-        font-weight: bold;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        font-family:Arial, sans-serif;
+        gap:10px;
+        padding:10px;
     ">
-        Game Over! Final Score: {st.session_state.score}
+        <div style="color:purple; font-weight:bold; font-size:20px;">
+            Algorithm: {algorithm}
+        </div>
+        <div style="color:green; font-weight:bold; font-size:20px;">
+            Score: {st.session_state.score}
+        </div>
+        <div style="color:red; font-weight:bold; font-size:20px;">
+            Time Left: {time_left}s
+        </div>
+        <div style="color:blue; font-weight:bold; font-size:20px;">
+            Level: {level}
+        </div>
     </div>
+    <style>
+        @media (max-width: 700px) {{
+            div[data-testid="stVerticalBlock"] > div {{
+                flex-direction: column !important;
+            }}
+        }}
+    </style>
     """
-    st.markdown(game_over_html, unsafe_allow_html=True)
-
-st.markdown("</div>", unsafe_allow_html=True)
-
-# -------------------------------
-# HUD (Fixed Right Side)
-# -------------------------------
-hud_html = f"""
-<div style="
-    position: fixed;
-    top: 50px;
-    right: 20px;
-    background-color: white;
-    padding: 60px 60px;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-    z-index: 9999;
-    text-align: center;
-">
-    <div style="margin-bottom: 10px;">
-        <h4 style="margin:0; color:#333;">Score</h4>
-        <p style="margin:0; font-size:20px; font-weight:bold; color:green;">
-            {st.session_state.score}
-        </p>
-    </div>
-    <div style="margin-bottom: 10px;">
-        <h4 style="margin:0; color:#333;">Time Left</h4>
-        <p style="margin:0; font-size:20px; font-weight:bold; color:red;">
-            {time_left}s
-        </p>
-    </div>
-    <div>
-        <h4 style="margin:0; color:#333;">Level</h4>
-        <p style="margin:0; font-size:20px; font-weight:bold; color:blue;">
-            {level}
-        </p>
-    </div>
-</div>
-"""
-
-st.markdown(hud_html, unsafe_allow_html=True)
+    st.markdown(hud_html, unsafe_allow_html=True)
 
 # -------------------------------
 # Refresh Logic
 # -------------------------------
 if not st.session_state.game_over:
-    time.sleep(0.2)  # snake ki speed control
+    time.sleep(0.2)
     st.rerun()
