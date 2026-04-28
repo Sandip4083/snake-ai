@@ -1,86 +1,78 @@
-# 🐍 Snake AI Game
-<img width="636" height="636" alt="snake" src="https://github.com/user-attachments/assets/fc5f25eb-cb77-4b16-9f71-2e7f8d7443eb" />
+# 🐍 AI Snake Game — Python + MERN Stack
 
+An AI-powered Snake game where **7 pathfinding algorithms** navigate the snake in real-time.
 
-An **AI-powered Snake Game** built with **Python** and **Pygame**.  
-The snake automatically plays the game using different **search algorithms** like BFS, DFS, UCS, IDS, Greedy Best First Search, A\*, and Random moves.
-
----
-
-## 🎯 Features
-
-- Multiple AI algorithms to control the snake:
-  - **BFS** (Breadth First Search)
-  - **DFS** (Depth First Search)
-  - **UCS** (Uniform Cost Search)
-  - **IDS** (Iterative Deepening Search)
-  - **Greedy Best First Search**
-  - **A\*** (A-Star Search)
-  - **Random Move**
-- Four difficulty levels with increasing number of obstacles.
-- Timer-based gameplay (default 30s).
-- Score tracking during play.
+**Stack:** Python FastAPI · React · MongoDB · Vercel
 
 ---
 
-## 📂 Project Structure
+## 🏗️ Architecture
 
-snake-ai/
-│
-├── src/
-│ ├── snake.py # Main game file
-│ ├── search_algorithms.py # All pathfinding algorithms
-│
-├── requirements.txt # Dependencies
-└── README.md # Project documentation
+```
+Browser (React + Canvas)
+   │ calls once per food item
+   ▼
+Python FastAPI (Render) ── /move ──► returns full path
+   
+Node.js Serverless (Vercel) ── /api/scores ──► MongoDB Atlas
+```
 
 ---
 
-## 🚀 How to Run
+## 🚀 Local Development
 
-1. **Clone the repository**
+### 1. Python API Server
+```bash
+cd server
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+```
 
-   ```bash
-   git clone https://github.com/<your-username>/snake-ai.git
-   cd snake-ai/src
+### 2. React Frontend
+```bash
+cd client
+npm install
+npm run dev
+```
 
+Open **http://localhost:5173**
+
+---
+
+## ☁️ Deployment
+
+### Python Backend → Render (Free)
+1. Push to GitHub
+2. Create **Web Service** on [render.com](https://render.com)
+3. Set:
+   - **Root Directory:** `server`
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `uvicorn main:app --host 0.0.0.0 --port $PORT`
+4. Copy the Render URL (e.g. `https://snake-ai.onrender.com`)
+
+### Frontend + Scores API → Vercel
+1. In Vercel dashboard → **Environment Variables**:
    ```
+   MONGODB_URI         = mongodb+srv://...
+   VITE_PYTHON_API_URL = https://snake-ai.onrender.com
+   ```
+2. Push to GitHub → Vercel auto-deploys
 
-2. **Install dependencies**
-   pip install -r requirements.txt
+---
 
-3. **Run the game**
-   python snake.py <level> <algorithm>
+## 🤖 Algorithms
 
-Levels:
-level0 → No obstacles
-level1 → 5% grid as obstacles
-level2 → 10% grid as obstacles
-level3 → 15% grid as obstacles
+| Algorithm  | Optimal | Speed | Notes |
+|---|---|---|---|
+| BFS        | ✅ Yes | Medium | Shortest path |
+| DFS        | ❌ No  | Fast   | Deep-first exploration |
+| A*         | ✅ Yes | Fast   | Heuristic guided |
+| UCS        | ✅ Yes | Medium | Cost-based |
+| IDS        | ✅ Yes | Slow   | Memory efficient |
+| Greedy BFS | ❌ No  | Fast   | Heuristic only |
+| Random     | ❌ No  | Varies | BFS fallback |
 
-Algorithms:
-bfs, dfs, ucs, ids, astar, greedy_bfs, random
+---
 
-🎮 Example Runs
-python snake.py level0 bfs
-python snake.py level2 astar
-python snake.py level3 random
-
-Output (in terminal when game ends):
-Score: 13
-
-🖼️ Screenshots
-![alt text](image.png)
-![alt text](image-1.png)
-![alt text](image-2.png)
-![alt text](image-3.png)
-![alt text](image-4.png)
-![alt text](image-5.png)
-
-📊 Future Improvements
-Add more AI algorithms (like Q-learning, Genetic Algorithm).
-Save scores automatically in a file.
-Support for human player vs AI.
-
-👨‍💻 Author
-Sandip Kumar Sah
+## 👨‍💻 Author
+**Sandip Kumar Sah**

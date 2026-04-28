@@ -1,0 +1,13 @@
+{
+  "name": "snake-ai",
+  "version": "1.0.0",
+  "description": "AI Snake Game - Python FastAPI + MERN Stack",
+  "dependencies": {
+    "mongodb": "^6.5.0"
+  },
+  "scripts": {
+    "dev:client": "cd client && npm run dev",
+    "build": "cd client && npm install && npm run build",
+    "setup": "npm install && cd client && npm install"
+  }
+}
