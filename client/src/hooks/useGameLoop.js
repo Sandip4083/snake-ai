@@ -168,6 +168,8 @@ export function useGameLoop(canvasRef) {
       pathRef.current = await computePath();
       fetchRef.current = false;
       setIsFetching(false);
+      // Game may have ended (timer) while fetch was in-flight — bail out
+      if (goRef.current) return;
     }
 
     if (pathRef.current.length === 0) { endGame(); return; }
