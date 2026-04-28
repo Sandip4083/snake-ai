@@ -50,7 +50,7 @@ npm run dev:api
 
 **Terminal 2 (Python API):**
 ```bash
-uvicorn api.index:app --reload --port 8000
+uvicorn api.move:app --reload --port 8000
 ```
 
 **Terminal 3 (React Client):**

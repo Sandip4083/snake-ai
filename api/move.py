@@ -3,13 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
 
-from api.algorithms.bfs import bfs
-from api.algorithms.dfs import dfs
-from api.algorithms.astar import astar
-from api.algorithms.ucs import ucs
-from api.algorithms.ids import ids
-from api.algorithms.greedy_bfs import greedy_bfs
-from api.algorithms.random_move import random_move
+from algorithms.bfs import bfs
+from algorithms.dfs import dfs
+from algorithms.astar import astar
+from algorithms.ucs import ucs
+from algorithms.ids import ids
+from algorithms.greedy_bfs import greedy_bfs
+from algorithms.random_move import random_move
 
 app = FastAPI(title="Snake AI API", version="1.0.0")
 
