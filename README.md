@@ -8,55 +8,70 @@ An AI-powered Snake game where **7 pathfinding algorithms** navigate the snake i
 
 ## 🏗️ Architecture
 
-```
-Browser (React + Canvas)
-   │ calls once per food item
-   ▼
-Python FastAPI (Render) ── /move ──► returns full path
-   
-Node.js Serverless (Vercel) ── /api/scores ──► MongoDB Atlas
+This project is fully unified and deploys entirely on Vercel as a single application without needing separate backend servers.
+
+```text
+Browser (React + HTML5 Canvas)
+   │
+   ├─► Python FastAPI (Vercel Serverless) ── /api/move ──► Calculates full AI path
+   │
+   └─► Node.js (Vercel Serverless)        ── /api/scores ──► Saves/Loads MongoDB Leaderboard
 ```
 
 ---
 
 ## 🚀 Local Development
 
-### 1. Python API Server
+To run both the Python backend and Node.js backend locally:
+
+### 1. Install Dependencies
 ```bash
-cd server
+# Install Python dependencies
 pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
+
+# Install Node and React dependencies
+npm run setup
 ```
 
-### 2. React Frontend
+### 2. Configure Environment Variables
+Create a `.env` file in the root of your project:
+```env
+MONGODB_URI=mongodb+srv://<your_username>:<your_password>@cluster0...
+```
+
+### 3. Start Local Servers
+We run 3 servers for local development (Python API, Node API, Vite Frontend).
+Open 3 separate terminals:
+
+**Terminal 1 (Node API):**
 ```bash
-cd client
-npm install
-npm run dev
+npm run dev:api
 ```
 
+**Terminal 2 (Python API):**
+```bash
+uvicorn api.index:app --reload --port 8000
+```
+
+**Terminal 3 (React Client):**
+```bash
+npm run dev:client
+```
 Open **http://localhost:5173**
 
 ---
 
-## ☁️ Deployment
+## ☁️ One-Click Deployment to Vercel
 
-### Python Backend → Render (Free)
-1. Push to GitHub
-2. Create **Web Service** on [render.com](https://render.com)
-3. Set:
-   - **Root Directory:** `server`
-   - **Build Command:** `pip install -r requirements.txt`
-   - **Start Command:** `uvicorn main:app --host 0.0.0.0 --port $PORT`
-4. Copy the Render URL (e.g. `https://snake-ai.onrender.com`)
+This application is configured for "Zero-Config" deployment on Vercel.
 
-### Frontend + Scores API → Vercel
-1. In Vercel dashboard → **Environment Variables**:
-   ```
-   MONGODB_URI         = mongodb+srv://...
-   VITE_PYTHON_API_URL = https://snake-ai.onrender.com
-   ```
-2. Push to GitHub → Vercel auto-deploys
+1. Push your code to GitHub.
+2. Log in to [Vercel](https://vercel.com) and click **Add New Project**.
+3. Import your GitHub repository.
+4. Expand the **Environment Variables** section and add your `MONGODB_URI`.
+5. Click **Deploy**.
+
+Vercel will automatically build the React app, detect `requirements.txt` to install the Python dependencies, and route the `/api` endpoints automatically based on our `vercel.json` config.
 
 ---
 
@@ -64,13 +79,13 @@ Open **http://localhost:5173**
 
 | Algorithm  | Optimal | Speed | Notes |
 |---|---|---|---|
-| BFS        | ✅ Yes | Medium | Shortest path |
+| BFS        | ✅ Yes | Medium | Shortest path guaranteed |
 | DFS        | ❌ No  | Fast   | Deep-first exploration |
 | A*         | ✅ Yes | Fast   | Heuristic guided |
-| UCS        | ✅ Yes | Medium | Cost-based |
-| IDS        | ✅ Yes | Slow   | Memory efficient |
+| UCS        | ✅ Yes | Medium | Cost-based (Uniform Cost Search) |
+| IDS        | ✅ Yes | Slow   | Memory efficient (Iterative Deepening) |
 | Greedy BFS | ❌ No  | Fast   | Heuristic only |
-| Random     | ❌ No  | Varies | BFS fallback |
+| Random     | ❌ No  | Varies | Picks valid adjacent moves |
 
 ---
 
