@@ -53,6 +53,7 @@ def health():
 
 
 @app.post("/api/move")
+@app.post("/move")
 def get_move(req: MoveRequest):
     algo = ALGORITHMS.get(req.algorithm, bfs)
     blocked = set(map(tuple, req.obstacles))
