@@ -33,12 +33,21 @@ if (!uri) {
 }
 
 let cachedClient = null;
+
 async function getDb() {
-  if (!cachedClient) {
-    cachedClient = new MongoClient(uri);
-    await cachedClient.connect();
-    console.log('✅  Connected to MongoDB');
+  if (cachedClient) {
+    try {
+      // test the connection
+      await cachedClient.db('admin').command({ ping: 1 });
+      return cachedClient.db('snakeai');
+    } catch (e) {
+      cachedClient = null; // drop cache and reconnect
+    }
   }
+  
+  cachedClient = new MongoClient(uri);
+  await cachedClient.connect();
+  console.log('✅  Connected to MongoDB');
   return cachedClient.db('snakeai');
 }
 

@@ -1,5 +1,5 @@
 import random
-from algorithms.bfs import bfs
+from api.algorithms.bfs import bfs
 
 DIRECTIONS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 

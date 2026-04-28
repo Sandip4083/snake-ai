@@ -1,15 +1,20 @@
 const { MongoClient } = require('mongodb');
 
 const uri = process.env.MONGODB_URI;
-let cached = null;
+let cachedClient = null;
 
 async function getDb() {
-  if (!cached) {
-    const client = new MongoClient(uri);
-    await client.connect();
-    cached = client;
+  if (cachedClient) {
+    try {
+      await cachedClient.db('admin').command({ ping: 1 });
+      return cachedClient.db('snakeai');
+    } catch (e) {
+      cachedClient = null;
+    }
   }
-  return cached.db('snakeai');
+  cachedClient = new MongoClient(uri);
+  await cachedClient.connect();
+  return cachedClient.db('snakeai');
 }
 
 module.exports = async function handler(req, res) {

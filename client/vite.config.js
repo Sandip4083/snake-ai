@@ -5,10 +5,15 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': {
+      '/api/scores': {
         target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/api/move': {
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
     },
   },
 });
+

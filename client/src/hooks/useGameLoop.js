@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { ROWS, COLS, CELL_SIZE, generateObstacles, generateFood } from '../utils/gameUtils.js';
 
-const PYTHON_API = import.meta.env.VITE_PYTHON_API_URL || 'http://localhost:8000';
+const PYTHON_API = '/api';
 
 function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
