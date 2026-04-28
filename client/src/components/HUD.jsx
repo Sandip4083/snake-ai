@@ -35,9 +35,6 @@ export function HUD({ score, timeLeft, curSettings, isFetching }) {
         <span className="stat-val" style={{ color: info.color || '#fff' }}>{info.name || '-'}</span>
       </div>
 
-      {isFetching && (
-        <div className="fetching-badge">🐍 AI thinking…</div>
-      )}
     </div>
   );
 }

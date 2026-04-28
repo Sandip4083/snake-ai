@@ -151,7 +151,8 @@ export function useGameLoop(canvasRef) {
       const data = await res.json();
       return data.path || [];
     } catch (err) {
-      console.error('Python API error:', err);
+      console.error('❌ Python API Error / Network Error:', err.message);
+      console.error('Make sure your backend server is running if testing locally!');
       return [];
     }
   }, []);
