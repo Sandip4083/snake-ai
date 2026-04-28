@@ -1,3 +1,5 @@
+import time
+
 DIRECTIONS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
 
@@ -20,7 +22,12 @@ def _dls(node, goal, obstacles, rows, cols, depth, path, visited):
 
 def ids(start, goal, obstacles, rows, cols):
     max_depth = min(rows * cols, 120)
+    start_time = time.time()
     for depth in range(max_depth):
+        # Prevent Vercel Serverless timeout (10s max, so cap at 4.5s)
+        if time.time() - start_time > 4.5:
+            return []
+            
         visited = {start}
         result = _dls(start, goal, obstacles, rows, cols, depth, [], visited)
         if result is not None:
