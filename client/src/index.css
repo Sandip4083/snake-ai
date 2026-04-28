@@ -151,7 +151,6 @@ select option { background: #1a1f2e; }
 .start-btn:active { transform: translateY(0); }
 
 /* ── HUD ────────────────────────────────────────────── */
-.hud-card {}
 .stat-row {
   display: flex;
   justify-content: space-between;
