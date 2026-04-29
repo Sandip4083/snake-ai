@@ -19,7 +19,7 @@
   --sidebar-w: 240px;
 }
 
-html, body { height: 100%; }
+html, body { height: 100%; overflow-x: hidden; }
 body {
   background: var(--bg);
   color: var(--text);
@@ -30,15 +30,32 @@ body {
     radial-gradient(ellipse at 90% 80%, rgba(0,212,255,0.04) 0%, transparent 50%);
 }
 
-/* ── App shell — 90% viewport ── */
-.app {
-  width: 94vw;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 12px 0 40px;
+/* ── Outer page scroll container ── */
+.page-shell {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+}
+
+/* ── Scrollable section below the game ── */
+.below-game {
+  width: 96vw;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 0 32px;
+  flex-shrink: 0;
+}
+
+/* ── App shell ── */
+.app {
+  width: 96vw;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 10px 0 24px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* ── Header ── */
@@ -99,9 +116,11 @@ body {
 /* ── Main row ── */
 .main-row {
   display: flex;
-  gap: 16px;
-  align-items: flex-start;
+  gap: 14px;
+  align-items: stretch;
   flex: 1;
+  min-height: 0;       /* critical: lets children shrink inside flex */
+  overflow: hidden;
 }
 
 /* ── Canvas column ── */
@@ -111,22 +130,32 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0;
+  min-height: 0;
 }
 
-/* ── Canvas wrap: fixed size box ── */
+/* ── Canvas wrap: fills remaining height, 1:1 ratio ── */
 .canvas-wrap {
   position: relative;
-  width: 100%;
-  max-width: 480px;
+  flex: 1;
+  min-height: 0;
+  /* Keep canvas square using the smaller of width/height */
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
 }
 .game-canvas {
   display: block;
+  /* Fill the wrap but stay square via JS-rendered 500×500 */
   width: 100%;
-  height: auto;
+  height: 100%;
+  /* Override: use min() so it never overflows vertically */
+  max-height: calc(100vh - 130px);
+  max-width: calc(100vh - 130px);
   aspect-ratio: 1 / 1;
+  object-fit: contain;
   border-radius: 0 0 var(--radius) var(--radius);
   border: 1px solid var(--border);
-  box-shadow: 0 0 50px rgba(0,255,136,0.07), var(--shadow);
+  box-shadow: 0 0 50px rgba(0,255,136,0.08), var(--shadow);
 }
 
 /* ── Left panel — fixed width, scrollable ── */
@@ -135,8 +164,8 @@ body {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  max-height: calc(100vh - 90px);
+  gap: 10px;
+  height: 100%;         /* fill main-row height */
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
@@ -389,13 +418,14 @@ body {
 
 /* ── Leaderboard ── */
 .leaderboard-section {
-  margin-top: 24px;
+  margin-top: 16px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 20px;
+  padding: 16px 20px;
   backdrop-filter: blur(12px);
   flex-shrink: 0;
+  overflow-x: auto;
 }
 .lb-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .lb-title { font-family: 'Orbitron', sans-serif; font-size: 0.9rem; color: var(--primary); letter-spacing: 1.5px; }
@@ -444,7 +474,7 @@ body {
 /* ── Footer ── */
 .app-footer {
   display: flex; align-items: center; justify-content: center; flex-wrap: wrap;
-  gap: 8px; margin-top: 32px; padding: 14px 0 4px;
+  gap: 8px; margin-top: 10px; padding: 8px 0 2px;
   border-top: 1px solid rgba(255,255,255,0.05);
   color: var(--muted); font-size: 0.76rem; flex-shrink: 0;
 }
@@ -468,8 +498,10 @@ body {
 
 /* ── Responsive ── */
 @media (max-width: 700px) {
-  .main-row { flex-direction: column; }
-  .left-panel { width: 100%; max-height: none; flex-direction: row; flex-wrap: wrap; }
+  .app { height: auto; overflow: auto; }
+  .main-row { flex-direction: column; overflow: visible; }
+  .left-panel { width: 100%; height: auto; flex-direction: row; flex-wrap: wrap; }
   .card { flex: 1; min-width: 160px; }
-  .canvas-wrap { max-width: 100%; }
+  .canvas-wrap { height: 80vw; max-height: 80vw; max-width: 100%; }
+  .game-canvas { max-height: 80vw; max-width: 80vw; }
 }

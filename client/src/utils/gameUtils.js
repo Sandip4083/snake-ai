@@ -4,6 +4,38 @@ export const CELL_SIZE = 20;
 
 export const LEVELS = { level0: 0, level1: 5, level2: 10, level3: 15 };
 
+// ── Client-side BFS fallback ──────────────────────────────────────────────
+// Runs instantly in the browser when the Python API is unavailable or slow.
+// Returns a path as [[dr,dc], ...] — same format as the server response.
+export function clientBfsFallback(head, food, bodySet, obstacles, rows, cols) {
+  const DIRS = [[-1,0],[1,0],[0,-1],[0,1]];
+  const startKey = `${head[0]},${head[1]}`;
+  const goalKey  = `${food[0]},${food[1]}`;
+  const blocked  = new Set([...bodySet, ...obstacles]);
+
+  const queue   = [[head, []]];
+  const visited = new Set([startKey]);
+
+  while (queue.length > 0) {
+    const [cur, path] = queue.shift();
+    const key = `${cur[0]},${cur[1]}`;
+    if (key === goalKey) return path;
+
+    for (const [dr, dc] of DIRS) {
+      const nr = cur[0] + dr, nc = cur[1] + dc;
+      const nk = `${nr},${nc}`;
+      if (
+        nr >= 0 && nr < rows && nc >= 0 && nc < cols &&
+        !visited.has(nk) && !blocked.has(nk)
+      ) {
+        visited.add(nk);
+        queue.push([[nr, nc], [...path, [dr, dc]]]);
+      }
+    }
+  }
+  return []; // no path found
+}
+
 export function generateObstacles(level, snakeStart, rows, cols) {
   const obstacles = new Set();
   const count = Math.floor((rows * cols * LEVELS[level]) / 100);

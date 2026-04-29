@@ -74,3 +74,12 @@ def get_move(req: MoveRequest):
         req.cols,
     )
     return {"path": path, "algorithm": req.algorithm, "found": len(path) > 0}
+
+
+# ── Vercel serverless handler (mangum wraps ASGI → AWS Lambda style) ──
+try:
+    from mangum import Mangum
+    handler = Mangum(app, lifespan="off")
+except ImportError:
+    # Fallback: if mangum not available, expose app directly
+    handler = app
