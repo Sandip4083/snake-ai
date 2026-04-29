@@ -1,7 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { ROWS, COLS, CELL_SIZE, generateObstacles, generateFood } from '../utils/gameUtils.js';
 
-const PYTHON_API = '/api';
+// Uses Vercel's automatic /api routing
+const API_BASE = '/api';
 
 function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
@@ -14,28 +15,46 @@ function roundRect(ctx, x, y, w, h, r) {
 }
 
 export function useGameLoop(canvasRef) {
-  const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(30);
-  const [gameOver, setGameOver] = useState(false);
-  const [isRunning, setIsRunning] = useState(false);
-  const [isFetching, setIsFetching] = useState(false);
+  const [score,       setScore]       = useState(0);
+  const [timeLeft,    setTimeLeft]    = useState(30);
+  const [gameOver,    setGameOver]    = useState(false);
+  const [isRunning,   setIsRunning]   = useState(false);
+  const [isFetching,  setIsFetching]  = useState(false);
+  const [foodsEaten,  setFoodsEaten]  = useState(0);
   const [curSettings, setCurSettings] = useState({
     algorithm: 'bfs', level: 'level0', gameDuration: 30, speed: 130,
   });
 
-  const snakeRef   = useRef([[12, 12]]);
-  const foodRef    = useRef([5, 5]);
-  const obsRef     = useRef(new Set());
-  const pathRef    = useRef([]);
-  const scoreRef   = useRef(0);
-  const tlRef      = useRef(30);
-  const goRef      = useRef(false);
-  const algoRef    = useRef('bfs');
-  const fetchRef   = useRef(false);
+  const snakeRef    = useRef([[12, 12]]);
+  const foodRef     = useRef([5, 5]);
+  const obsRef      = useRef(new Set());
+  const pathRef     = useRef([]);
+  const scoreRef    = useRef(0);
+  const tlRef       = useRef(30);
+  const goRef       = useRef(false);
+  const algoRef     = useRef('bfs');
+  const fetchRef    = useRef(false);
+  const particlesRef = useRef([]);
 
   const gameIntRef  = useRef(null);
   const timerIntRef = useRef(null);
   const rafRef      = useRef(null);
+
+  // ── Particles ────────────────────────────────────────────
+  const addParticles = useCallback((r, c) => {
+    const colors = ['#00FF88', '#FFD700', '#FF6B6B', '#4ECDC4', '#FFD93D'];
+    for (let i = 0; i < 8; i++) {
+      particlesRef.current.push({
+        x: c * CELL_SIZE + CELL_SIZE / 2,
+        y: r * CELL_SIZE + CELL_SIZE / 2,
+        vx: (Math.random() - 0.5) * 4,
+        vy: (Math.random() - 0.5) * 4,
+        life: 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        size: Math.random() * 4 + 2,
+      });
+    }
+  }, []);
 
   // ── Render ──────────────────────────────────────────────
   const render = useCallback(() => {
@@ -44,11 +63,12 @@ export function useGameLoop(canvasRef) {
     const ctx = canvas.getContext('2d');
     const W = COLS * CELL_SIZE, H = ROWS * CELL_SIZE;
 
-    ctx.fillStyle = '#0A0E1A';
+    // Background
+    ctx.fillStyle = '#080C18';
     ctx.fillRect(0, 0, W, H);
 
-    // Grid lines
-    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    // Subtle grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.025)';
     ctx.lineWidth = 0.5;
     for (let r = 0; r <= ROWS; r++) {
       ctx.beginPath(); ctx.moveTo(0, r * CELL_SIZE); ctx.lineTo(W, r * CELL_SIZE); ctx.stroke();
@@ -57,60 +77,111 @@ export function useGameLoop(canvasRef) {
       ctx.beginPath(); ctx.moveTo(c * CELL_SIZE, 0); ctx.lineTo(c * CELL_SIZE, H); ctx.stroke();
     }
 
-    // Obstacles
+    // Obstacles — styled like walls/rocks
     obsRef.current.forEach(key => {
       const [r, c] = key.split(',').map(Number);
-      ctx.fillStyle = '#1E2230';
-      roundRect(ctx, c * CELL_SIZE + 1, r * CELL_SIZE + 1, CELL_SIZE - 2, CELL_SIZE - 2, 3);
+      const x = c * CELL_SIZE, y = r * CELL_SIZE;
+      // Outer block
+      ctx.fillStyle = '#1A1E2E';
+      roundRect(ctx, x + 1, y + 1, CELL_SIZE - 2, CELL_SIZE - 2, 3);
       ctx.fill();
-      ctx.fillStyle = '#252840';
-      ctx.fillRect(c * CELL_SIZE + 5, r * CELL_SIZE + 5, CELL_SIZE - 10, CELL_SIZE - 10);
+      // Inner bevel highlight
+      ctx.fillStyle = '#232740';
+      ctx.fillRect(x + 3, y + 3, CELL_SIZE - 8, CELL_SIZE - 8);
+      // Top shine
+      ctx.fillStyle = 'rgba(255,255,255,0.04)';
+      ctx.fillRect(x + 3, y + 3, CELL_SIZE - 8, 3);
     });
 
-    // Path preview
+    // Path preview dots
     if (pathRef.current.length > 0) {
       let [r, c] = snakeRef.current[0];
-      for (const [dr, dc] of pathRef.current) {
+      pathRef.current.forEach(([dr, dc], idx) => {
         r += dr; c += dc;
-        ctx.fillStyle = 'rgba(0,150,255,0.15)';
+        const alpha = Math.max(0.05, 0.25 - idx * 0.012);
+        ctx.fillStyle = `rgba(0,180,255,${alpha})`;
         ctx.beginPath();
         ctx.arc(c * CELL_SIZE + CELL_SIZE / 2, r * CELL_SIZE + CELL_SIZE / 2, 2.5, 0, Math.PI * 2);
         ctx.fill();
-      }
+      });
     }
 
-    // Snake body
+    // Snake body — gradient from tail to neck
     const snake = snakeRef.current;
     for (let i = snake.length - 1; i >= 1; i--) {
       const [r, c] = snake[i];
       const t = i / snake.length;
-      ctx.fillStyle = `rgb(0,${Math.floor(160 - t * 60)},60)`;
+      // Gradient: tail is dark, neck is bright
+      const g = Math.floor(180 - t * 80);
+      const b = Math.floor(60 + t * 20);
+      ctx.fillStyle = `rgb(0,${g},${b})`;
       roundRect(ctx, c * CELL_SIZE + 1, r * CELL_SIZE + 1, CELL_SIZE - 2, CELL_SIZE - 2, 3);
       ctx.fill();
+      // Segment highlight
+      ctx.fillStyle = 'rgba(255,255,255,0.06)';
+      ctx.fillRect(c * CELL_SIZE + 3, r * CELL_SIZE + 2, CELL_SIZE - 6, 3);
     }
 
-    // Snake head
+    // Snake head — glowing
     if (snake.length > 0) {
       const [r, c] = snake[0];
-      ctx.shadowBlur = 15; ctx.shadowColor = '#00FF88';
+      // Glow halo
+      ctx.shadowBlur = 20; ctx.shadowColor = '#00FF88';
       ctx.fillStyle = '#00FF88';
-      roundRect(ctx, c * CELL_SIZE + 1, r * CELL_SIZE + 1, CELL_SIZE - 2, CELL_SIZE - 2, 4);
+      roundRect(ctx, c * CELL_SIZE + 1, r * CELL_SIZE + 1, CELL_SIZE - 2, CELL_SIZE - 2, 5);
       ctx.fill();
       ctx.shadowBlur = 0;
+      // Eyes
       ctx.fillStyle = '#0A0E1A';
-      ctx.beginPath(); ctx.arc(c * CELL_SIZE + 6,  r * CELL_SIZE + 7, 2, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(c * CELL_SIZE + 14, r * CELL_SIZE + 7, 2, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(c * CELL_SIZE + 7,  r * CELL_SIZE + 7,  2.5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(c * CELL_SIZE + 13, r * CELL_SIZE + 7,  2.5, 0, Math.PI * 2); ctx.fill();
+      // Eye shine
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      ctx.beginPath(); ctx.arc(c * CELL_SIZE + 8,  r * CELL_SIZE + 6,  1, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(c * CELL_SIZE + 14, r * CELL_SIZE + 6,  1, 0, Math.PI * 2); ctx.fill();
     }
 
-    // Food (pulsing)
+    // Food — pulsing glowing apple
     const [fr, fc] = foodRef.current;
-    const pulse = (Math.sin(Date.now() / 250) + 1) / 2;
-    ctx.shadowBlur = 15 + pulse * 8; ctx.shadowColor = '#FF4757';
-    ctx.fillStyle = `rgb(255,${55 + Math.floor(pulse * 40)},${55 + Math.floor(pulse * 40)})`;
+    const t = Date.now();
+    const pulse = (Math.sin(t / 250) + 1) / 2;
+    const glow = 20 + pulse * 15;
+    ctx.shadowBlur = glow; ctx.shadowColor = '#FF4757';
+    // Outer glow ring
+    ctx.fillStyle = `rgba(255,71,87,${0.12 + pulse * 0.08})`;
     ctx.beginPath();
-    ctx.arc(fc * CELL_SIZE + CELL_SIZE / 2, fr * CELL_SIZE + CELL_SIZE / 2, CELL_SIZE / 2 - 2 + pulse * 2, 0, Math.PI * 2);
+    ctx.arc(fc * CELL_SIZE + CELL_SIZE / 2, fr * CELL_SIZE + CELL_SIZE / 2, CELL_SIZE / 2 + 1 + pulse * 2, 0, Math.PI * 2);
+    ctx.fill();
+    // Apple body
+    ctx.fillStyle = `rgb(255,${50 + Math.floor(pulse * 50)},60)`;
+    ctx.beginPath();
+    ctx.arc(fc * CELL_SIZE + CELL_SIZE / 2, fr * CELL_SIZE + CELL_SIZE / 2, CELL_SIZE / 2 - 2, 0, Math.PI * 2);
+    ctx.fill();
+    // Apple shine
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.beginPath();
+    ctx.arc(fc * CELL_SIZE + CELL_SIZE / 2 - 2, fr * CELL_SIZE + CELL_SIZE / 2 - 2, 3, 0, Math.PI * 2);
     ctx.fill();
     ctx.shadowBlur = 0;
+
+    // Particles
+    particlesRef.current = particlesRef.current.filter(p => p.life > 0);
+    particlesRef.current.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.life -= 0.04;
+      p.vx *= 0.92;
+      p.vy *= 0.92;
+      ctx.globalAlpha = p.life;
+      ctx.fillStyle = p.color;
+      ctx.shadowBlur = 6;
+      ctx.shadowColor = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+    ctx.globalAlpha = 1;
   }, [canvasRef]);
 
   const startRenderLoop = useCallback(() => {
@@ -133,10 +204,13 @@ export function useGameLoop(canvasRef) {
   // ── Compute path via Python API ──────────────────────────
   const computePath = useCallback(async () => {
     const snake = snakeRef.current;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
     try {
-      const res = await fetch(`${PYTHON_API}/move`, {
+      const res = await fetch(`${API_BASE}/move`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           head: snake[0],
           food: foodRef.current,
@@ -147,12 +221,17 @@ export function useGameLoop(canvasRef) {
           cols: COLS,
         }),
       });
+      clearTimeout(timeout);
       if (!res.ok) throw new Error(`API ${res.status}`);
       const data = await res.json();
       return data.path || [];
     } catch (err) {
-      console.error('❌ Python API Error / Network Error:', err.message);
-      console.error('Make sure your backend server is running if testing locally!');
+      clearTimeout(timeout);
+      if (err.name === 'AbortError') {
+        console.warn('⏱ AI path request timed out — ending game');
+      } else {
+        console.error('❌ Python API Error:', err.message);
+      }
       return [];
     }
   }, []);
@@ -169,10 +248,10 @@ export function useGameLoop(canvasRef) {
       pathRef.current = await computePath();
       fetchRef.current = false;
       setIsFetching(false);
-      // Game may have ended (timer) while fetch was in-flight — bail out
       if (goRef.current) return;
     }
 
+    // No path found → snake is trapped → end game
     if (pathRef.current.length === 0) { endGame(); return; }
 
     const [dr, dc] = pathRef.current.shift();
@@ -189,12 +268,14 @@ export function useGameLoop(canvasRef) {
     if (nh[0] === foodRef.current[0] && nh[1] === foodRef.current[1]) {
       scoreRef.current++;
       setScore(scoreRef.current);
+      setFoodsEaten(fe => fe + 1);
+      addParticles(nh[0], nh[1]);
       foodRef.current = generateFood(snake, obsRef.current, ROWS, COLS);
       pathRef.current = [];
     } else {
       snake.pop();
     }
-  }, [computePath, endGame]);
+  }, [computePath, endGame, addParticles]);
 
   // ── Start Game ───────────────────────────────────────────
   const startGame = useCallback((s) => {
@@ -202,6 +283,7 @@ export function useGameLoop(canvasRef) {
     clearInterval(timerIntRef.current);
     stopRenderLoop();
     fetchRef.current = false;
+    particlesRef.current = [];
 
     const start = [Math.floor(ROWS / 2), Math.floor(COLS / 2)];
     snakeRef.current  = [start];
@@ -215,6 +297,7 @@ export function useGameLoop(canvasRef) {
 
     setCurSettings(s);
     setScore(0);
+    setFoodsEaten(0);
     setTimeLeft(s.gameDuration);
     setGameOver(false);
     setIsRunning(true);
@@ -235,5 +318,5 @@ export function useGameLoop(canvasRef) {
     stopRenderLoop();
   }, [stopRenderLoop]);
 
-  return { score, timeLeft, gameOver, isRunning, isFetching, curSettings, startGame };
+  return { score, timeLeft, gameOver, isRunning, isFetching, foodsEaten, curSettings, startGame };
 }

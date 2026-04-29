@@ -7,10 +7,15 @@ export const LEVELS = { level0: 0, level1: 5, level2: 10, level3: 15 };
 export function generateObstacles(level, snakeStart, rows, cols) {
   const obstacles = new Set();
   const count = Math.floor((rows * cols * LEVELS[level]) / 100);
-  while (obstacles.size < count) {
+  let attempts = 0;
+  while (obstacles.size < count && attempts < 5000) {
+    attempts++;
     const r = Math.floor(Math.random() * rows);
     const c = Math.floor(Math.random() * cols);
-    if (r !== snakeStart[0] || c !== snakeStart[1]) {
+    // Keep a safe zone around the snake start
+    const distR = Math.abs(r - snakeStart[0]);
+    const distC = Math.abs(c - snakeStart[1]);
+    if (distR > 2 || distC > 2) {
       obstacles.add(`${r},${c}`);
     }
   }
@@ -29,11 +34,18 @@ export function generateFood(snakeBody, obstacles, rows, cols) {
 }
 
 export const ALGORITHM_INFO = {
-  bfs:       { name: 'BFS',        desc: 'Breadth First Search — shortest path guaranteed', color: '#00FF88' },
-  dfs:       { name: 'DFS',        desc: 'Depth First Search — explores deep paths first',  color: '#FF6B6B' },
-  astar:     { name: 'A*',         desc: 'A* Search — optimal heuristic pathfinding',        color: '#FFD93D' },
-  ucs:       { name: 'UCS',        desc: 'Uniform Cost Search — minimum cost path',          color: '#6BCB77' },
-  ids:       { name: 'IDS',        desc: 'Iterative Deepening — memory efficient',           color: '#4ECDC4' },
-  greedy_bfs:{ name: 'Greedy BFS', desc: 'Greedy Best First — fast but not always optimal',  color: '#FF9F43' },
-  random:    { name: 'Random',     desc: 'Random moves with BFS fallback',                   color: '#A29BFE' },
+  bfs:        { name: 'BFS',        short: 'BFS', desc: 'Breadth First Search — shortest path guaranteed', color: '#00FF88', emoji: '🔵' },
+  dfs:        { name: 'DFS',        short: 'DFS', desc: 'Depth First Search — explores deep paths first',  color: '#FF6B6B', emoji: '🔴' },
+  astar:      { name: 'A*',         short: 'A*',  desc: 'A* Search — optimal with heuristic speed boost',  color: '#FFD93D', emoji: '⭐' },
+  ucs:        { name: 'UCS',        short: 'UCS', desc: 'Uniform Cost Search — minimum cost path',          color: '#6BCB77', emoji: '🟢' },
+  ids:        { name: 'IDS',        short: 'IDS', desc: 'Iterative Deepening — memory efficient',           color: '#4ECDC4', emoji: '🔷' },
+  greedy_bfs: { name: 'Greedy BFS', short: 'GBF', desc: 'Greedy Best First — fast but not always optimal',  color: '#FF9F43', emoji: '🟠' },
+  random:     { name: 'Random',     short: 'RND', desc: 'Random moves with BFS fallback',                   color: '#A29BFE', emoji: '🎲' },
+};
+
+export const LEVEL_INFO = {
+  level0: { label: 'Clean',     desc: 'No obstacles — pure pathfinding' },
+  level1: { label: 'Easy',      desc: '5% obstacles — slight challenge'  },
+  level2: { label: 'Medium',    desc: '10% obstacles — moderate maze'    },
+  level3: { label: 'Hard',      desc: '15% obstacles — dense labyrinth'  },
 };

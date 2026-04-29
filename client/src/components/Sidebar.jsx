@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { ALGORITHM_INFO } from '../utils/gameUtils.js';
+import { ALGORITHM_INFO, LEVEL_INFO } from '../utils/gameUtils.js';
 
-const LEVELS   = { level0: 'No Obstacles', level1: '5% Obstacles', level2: '10% Obstacles', level3: '15% Obstacles' };
 const DURATIONS = [{ v: 30, l: '30s' }, { v: 60, l: '60s' }, { v: 90, l: '90s' }];
 const SPEEDS    = [{ v: 200, l: '🐢 Slow' }, { v: 130, l: '⚡ Normal' }, { v: 70, l: '🚀 Fast' }];
 
@@ -11,31 +10,58 @@ export function Sidebar({ onStart, isRunning }) {
   const [duration, setDuration] = useState(30);
   const [speed,    setSpeed]    = useState(130);
 
-  const info = ALGORITHM_INFO[algo];
+  const info      = ALGORITHM_INFO[algo];
+  const levelInfo = LEVEL_INFO[level];
 
   return (
     <div className="card sidebar-card">
       <h3 className="card-title">⚙️ Controls</h3>
 
+      {/* Algorithm */}
       <div className="field">
         <label>Algorithm</label>
-        <select value={algo} onChange={e => setAlgo(e.target.value)}>
+        <div className="algo-grid">
           {Object.entries(ALGORITHM_INFO).map(([k, v]) => (
-            <option key={k} value={k}>{v.name}</option>
+            <button
+              key={k}
+              className={`algo-btn ${algo === k ? 'algo-btn--active' : ''}`}
+              style={algo === k ? { borderColor: v.color, color: v.color, background: `${v.color}18` } : {}}
+              onClick={() => setAlgo(k)}
+              title={v.desc}
+            >
+              <span className="algo-emoji">{v.emoji}</span>
+              <span className="algo-name">{v.short}</span>
+            </button>
           ))}
-        </select>
-        {info && <p className="desc" style={{ color: info.color }}>{info.desc}</p>}
+        </div>
+        {info && (
+          <div className="algo-desc-box" style={{ borderColor: `${info.color}44`, background: `${info.color}0a` }}>
+            <span style={{ color: info.color, fontWeight: 600 }}>{info.name}</span>
+            <br />
+            <span className="algo-desc-text">{info.desc}</span>
+          </div>
+        )}
       </div>
 
+      {/* Difficulty */}
       <div className="field">
         <label>Difficulty</label>
-        <select value={level} onChange={e => setLevel(e.target.value)}>
-          {Object.entries(LEVELS).map(([k, v]) => (
-            <option key={k} value={k}>{v}</option>
+        <div className="btn-group">
+          {Object.entries(LEVEL_INFO).map(([k, v]) => (
+            <button
+              key={k}
+              className={`tog-btn ${level === k ? 'active' : ''}`}
+              onClick={() => setLevel(k)}
+              title={v.desc}
+            >
+              {v.label}
+            </button>
           ))}
-        </select>
+        </div>
+        {levelInfo && <p className="desc">{levelInfo.desc}</p>}
       </div>
 
+      {/* Duration */}
       <div className="field">
         <label>Duration</label>
         <div className="btn-group">
@@ -45,6 +71,7 @@ export function Sidebar({ onStart, isRunning }) {
         </div>
       </div>
 
+      {/* Speed */}
       <div className="field">
         <label>Speed</label>
         <div className="btn-group">
