@@ -1,3 +1,10 @@
+import sys
+import os
+
+# ── CRITICAL: Add project root to sys.path so Vercel finds algorithms/ ──
+# api/index.py lives in /api/ — parent dir is the project root
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -22,29 +29,29 @@ app.add_middleware(
 )
 
 ALGORITHMS = {
-    "bfs": bfs,
-    "dfs": dfs,
-    "astar": astar,
-    "ucs": ucs,
-    "ids": ids,
+    "bfs":        bfs,
+    "dfs":        dfs,
+    "astar":      astar,
+    "ucs":        ucs,
+    "ids":        ids,
     "greedy_bfs": greedy_bfs,
-    "random": random_move,
+    "random":     random_move,
 }
 
 
 class MoveRequest(BaseModel):
-    head: List[int]
-    food: List[int]
+    head:       List[int]
+    food:       List[int]
     snake_body: List[List[int]]
-    obstacles: List[List[int]]
-    algorithm: str = "bfs"
-    rows: int = 25
-    cols: int = 25
+    obstacles:  List[List[int]]
+    algorithm:  str = "bfs"
+    rows:       int = 25
+    cols:       int = 25
 
 
 @app.get("/")
 def root():
-    return {"status": "ok", "message": "Snake AI Python API is running"}
+    return {"status": "ok", "message": "Snake AI API is running"}
 
 
 @app.get("/health")
