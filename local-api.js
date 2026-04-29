@@ -54,12 +54,13 @@ async function getDb() {
 // ── Request Handler ───────────────────────────────────────
 const server = http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') { res.writeHead(200); res.end(); return; }
 
-  if (req.url !== '/api/scores') {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  if (url.pathname !== '/api/scores') {
     res.writeHead(404); res.end('Not found'); return;
   }
 
@@ -75,7 +76,7 @@ const server = http.createServer(async (req, res) => {
       const docs = await db.collection('scores')
         .find({}).sort({ score: -1 }).limit(10).toArray();
       send(200, docs.map(d => ({
-        name: d.name, score: d.score,
+        _id: d._id, name: d.name, score: d.score,
         algorithm: d.algorithm, level: d.level, date: d.date,
       })));
     } catch (err) {
@@ -106,6 +107,22 @@ const server = http.createServer(async (req, res) => {
         send(500, { error: err.message });
       }
     });
+    return;
+  }
+
+  // DELETE — delete score
+  if (req.method === 'DELETE') {
+    try {
+      const id = url.searchParams.get('id');
+      if (!id) return send(400, { error: 'Missing id' });
+      const { ObjectId } = require('mongodb');
+      const db = await getDb();
+      await db.collection('scores').deleteOne({ _id: new ObjectId(id) });
+      send(200, { ok: true });
+    } catch (err) {
+      console.error(err);
+      send(500, { error: err.message });
+    }
     return;
   }
 
