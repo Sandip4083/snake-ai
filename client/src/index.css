@@ -96,12 +96,37 @@ body {
 }
 .badge-ghost:hover { color: var(--primary); border-color: var(--border); }
 
-/* ── Main — fills remaining height ── */
-.app-main {
+/* ── Main row ── */
+.main-row {
   display: flex;
   gap: 16px;
   align-items: flex-start;
   flex: 1;
+}
+
+/* ── Canvas column ── */
+.canvas-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ── Canvas wrap: fixed size box ── */
+.canvas-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+}
+.game-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  border-radius: 0 0 var(--radius) var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: 0 0 50px rgba(0,255,136,0.07), var(--shadow);
 }
 
 /* ── Left panel — fixed width, scrollable ── */
@@ -111,13 +136,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  /* Scrollable when content overflows */
-  max-height: calc(100vh - 100px);
+  max-height: calc(100vh - 90px);
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: rgba(0,255,136,0.2) transparent;
-  padding-right: 4px;
 }
 .left-panel::-webkit-scrollbar { width: 4px; }
 .left-panel::-webkit-scrollbar-track { background: transparent; }
@@ -256,13 +279,7 @@ body {
   animation: shimmer 1.2s ease-in-out infinite;
 }
 
-/* ── Canvas area — takes remaining space ── */
-.canvas-area {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
+/* ── Status bar ── */
 .canvas-status-bar {
   display: flex;
   align-items: center;
@@ -274,7 +291,6 @@ body {
   border-radius: var(--radius) var(--radius) 0 0;
   font-size: 0.76rem;
   min-height: 34px;
-  flex-shrink: 0;
 }
 .status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 .status-dot--green { background: var(--primary); box-shadow: 0 0 6px var(--primary); animation: pulse-dot 1.5s ease-in-out infinite; }
@@ -283,20 +299,10 @@ body {
 .status-text { color: var(--muted); font-size: 0.74rem; }
 .status-algo { color: var(--muted); font-size: 0.7rem; font-family: 'Orbitron', sans-serif; letter-spacing: 0.5px; margin-left: auto; }
 
-/* ── GAME CANVAS: fills the flex container ── */
-.game-canvas {
-  display: block;
-  width: 100% !important;
-  height: auto !important;
-  aspect-ratio: 1 / 1;
-  border-radius: 0 0 var(--radius) var(--radius);
-  border: 1px solid var(--border);
-  box-shadow: 0 0 60px rgba(0,255,136,0.07), var(--shadow);
-}
-
+/* Overlays sit inside canvas-wrap */
 .canvas-overlay {
   position: absolute;
-  inset: 34px 0 0 0;
+  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -306,8 +312,6 @@ body {
   border-radius: 0 0 var(--radius) var(--radius);
   backdrop-filter: blur(6px);
 }
-/* Make canvas-area position relative for overlays */
-.canvas-area { position: relative; }
 
 .overlay-snake { font-size: 3.5rem; animation: float 3s ease-in-out infinite; filter: drop-shadow(0 0 14px rgba(0,255,136,0.4)); }
 .overlay-title { font-family: 'Orbitron', sans-serif; font-size: 1.4rem; font-weight: 900; color: var(--primary); letter-spacing: 2px; }
@@ -324,7 +328,7 @@ body {
 /* ── Game Over ── */
 .gameover-overlay {
   position: absolute;
-  inset: 34px 0 0 0;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -464,8 +468,8 @@ body {
 
 /* ── Responsive ── */
 @media (max-width: 700px) {
-  .app-main { flex-direction: column; }
+  .main-row { flex-direction: column; }
   .left-panel { width: 100%; max-height: none; flex-direction: row; flex-wrap: wrap; }
-  .card { flex: 1; min-width: 180px; }
-  .game-canvas { width: 100% !important; }
+  .card { flex: 1; min-width: 160px; }
+  .canvas-wrap { max-width: 100%; }
 }

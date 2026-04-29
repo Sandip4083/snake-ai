@@ -7,7 +7,10 @@ import { Leaderboard } from './components/Leaderboard.jsx';
 
 export default function App() {
   const canvasRef = useRef(null);
-  const { score, timeLeft, gameOver, isRunning, isFetching, foodsEaten, curSettings, startGame } = useGameLoop(canvasRef);
+  const {
+    score, timeLeft, gameOver, isRunning,
+    isFetching, foodsEaten, curSettings, startGame
+  } = useGameLoop(canvasRef);
   const [lbKey, setLbKey] = useState(0);
 
   const handleScoreSubmit = async (name) => {
@@ -23,8 +26,12 @@ export default function App() {
     }
   };
 
+  const algoName = curSettings.algorithm?.toUpperCase();
+  const lvlName  = curSettings.level?.replace('level', 'Lv ');
+
   return (
     <div className="app">
+
       {/* ── Header ── */}
       <header className="app-header">
         <div className="app-logo">
@@ -40,9 +47,10 @@ export default function App() {
         </div>
       </header>
 
-      {/* ── Main ── */}
-      <main className="app-main">
-        {/* Left panel */}
+      {/* ── Main row ── */}
+      <div className="main-row">
+
+        {/* Left sidebar — scrollable */}
         <aside className="left-panel">
           <Sidebar onStart={startGame} isRunning={isRunning} />
           <HUD
@@ -54,22 +62,22 @@ export default function App() {
           />
         </aside>
 
-        {/* Canvas */}
-        <div className="canvas-area">
-          {/* Status bar above canvas */}
+        {/* Right: canvas column */}
+        <div className="canvas-col">
+          {/* Status bar */}
           <div className="canvas-status-bar">
             {isRunning && (
               <>
                 <span className="status-dot status-dot--green" />
                 <span className="status-text">
-                  {isFetching ? '🤖 AI Computing Path…' : '▶ Running'}
+                  {isFetching ? '🤖 AI Computing…' : '▶ Running'}
                 </span>
               </>
             )}
             {!isRunning && !gameOver && (
               <>
                 <span className="status-dot status-dot--muted" />
-                <span className="status-text">Waiting to start</span>
+                <span className="status-text">Ready to start</span>
               </>
             )}
             {gameOver && (
@@ -78,52 +86,41 @@ export default function App() {
                 <span className="status-text">Game Over — Score: {score}</span>
               </>
             )}
-            <span className="status-algo" style={{ marginLeft: 'auto' }}>
-              {isRunning || gameOver ? `${curSettings.algorithm?.toUpperCase()} · Lv ${curSettings.level?.replace('level','')}` : ''}
-            </span>
+            {(isRunning || gameOver) && (
+              <span className="status-algo">{algoName} · {lvlName}</span>
+            )}
           </div>
 
-          <canvas ref={canvasRef} width={500} height={500} className="game-canvas" />
+          {/* Canvas wrapper — keeps 1:1 ratio */}
+          <div className="canvas-wrap">
+            <canvas ref={canvasRef} width={500} height={500} className="game-canvas" />
 
-          {/* Idle overlay */}
-          {!isRunning && !gameOver && (
-            <div className="canvas-overlay">
-              <span className="overlay-snake">🐍</span>
-              <h2 className="overlay-title">AI Snake</h2>
-              <p className="overlay-hint">Pick an algorithm & press <strong>Start Game</strong></p>
-              <div className="overlay-tips">
-                <div className="tip-row">
-                  <span className="tip-badge">🔵 BFS</span>
-                  <span className="tip-text">Shortest path, always safe</span>
-                </div>
-                <div className="tip-row">
-                  <span className="tip-badge">⭐ A*</span>
-                  <span className="tip-text">Heuristic — fastest optimal</span>
-                </div>
-                <div className="tip-row">
-                  <span className="tip-badge">🎲 Random</span>
-                  <span className="tip-text">Chaotic fun with BFS safety net</span>
-                </div>
-                <div className="tip-row">
-                  <span className="tip-badge">🔴 DFS</span>
-                  <span className="tip-text">Deep dives, capped at 300 steps</span>
+            {!isRunning && !gameOver && (
+              <div className="canvas-overlay">
+                <span className="overlay-snake">🐍</span>
+                <h2 className="overlay-title">AI Snake</h2>
+                <p className="overlay-hint">Pick an algorithm &amp; press <strong>Start Game</strong></p>
+                <div className="overlay-tips">
+                  <div className="tip-row"><span className="tip-badge">🔵 BFS</span><span className="tip-text">Shortest path, always safe</span></div>
+                  <div className="tip-row"><span className="tip-badge">⭐ A*</span><span className="tip-text">Heuristic — fastest optimal</span></div>
+                  <div className="tip-row"><span className="tip-badge">🎲 Random</span><span className="tip-text">Chaos with BFS safety net</span></div>
+                  <div className="tip-row"><span className="tip-badge">🔷 IDS</span><span className="tip-text">Memory efficient deepening</span></div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Game Over overlay */}
-          {gameOver && (
-            <GameOver
-              score={score}
-              algorithm={curSettings.algorithm}
-              level={curSettings.level}
-              onSubmit={handleScoreSubmit}
-              onRestart={() => startGame(curSettings)}
-            />
-          )}
+            {gameOver && (
+              <GameOver
+                score={score}
+                algorithm={curSettings.algorithm}
+                level={curSettings.level}
+                onSubmit={handleScoreSubmit}
+                onRestart={() => startGame(curSettings)}
+              />
+            )}
+          </div>
         </div>
-      </main>
+      </div>
 
       {/* ── Leaderboard ── */}
       <Leaderboard refreshKey={lbKey} />
@@ -134,6 +131,7 @@ export default function App() {
         <span className="footer-sep">·</span>
         <span>Built by <strong>Sandip Kumar Sah</strong></span>
       </footer>
+
     </div>
   );
 }
