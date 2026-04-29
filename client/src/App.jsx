@@ -41,7 +41,7 @@ export default function App() {
             <span className="logo-snake">🐍</span>
             <div>
               <h1 className="app-title">AI Snake Game</h1>
-              <p className="app-sub">7 Algorithms · Python FastAPI · Real-time Pathfinding</p>
+              <p className="app-sub">7 Algorithms · Pure JS Pathfinding</p>
             </div>
           </div>
           <div className="app-header-right">
@@ -132,7 +132,7 @@ export default function App() {
         <Leaderboard refreshKey={lbKey} />
 
         <footer className="app-footer">
-          <span>🐍 Python FastAPI · ⚛️ React · 🍃 MongoDB · ▲ Vercel</span>
+          <span>🐍 Pure JS · ⚛️ React · 🍃 MongoDB · ▲ Vercel</span>
           <span className="footer-sep">·</span>
           <span>Built by <strong>Sandip Kumar Sah</strong></span>
         </footer>

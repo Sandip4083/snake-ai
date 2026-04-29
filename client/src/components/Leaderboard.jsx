@@ -23,6 +23,21 @@ export function Leaderboard({ refreshKey }) {
   const algos = ['all', ...Object.keys(ALGORITHM_INFO)];
   const filtered = filter === 'all' ? scores : scores.filter(s => s.algorithm === filter);
 
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this score?")) return;
+    try {
+      const res = await fetch(`/api/scores?id=${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setScores(prev => prev.filter(s => s._id !== id));
+      } else {
+        alert("Failed to delete score");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Error deleting score");
+    }
+  };
+
   return (
     <section className="leaderboard-section">
       <div className="lb-header">
@@ -67,6 +82,7 @@ export function Leaderboard({ refreshKey }) {
                 <th>Algorithm</th>
                 <th>Level</th>
                 <th>Date</th>
+                <th>Act</th>
               </tr>
             </thead>
             <tbody>
@@ -82,6 +98,9 @@ export function Leaderboard({ refreshKey }) {
                   </td>
                   <td className="lb-level">{s.level?.replace('level', 'Lv ')}</td>
                   <td className="lb-date">{s.date ? new Date(s.date).toLocaleDateString() : '—'}</td>
+                  <td>
+                    <button onClick={() => handleDelete(s._id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', opacity: 0.7, fontSize: '14px' }} title="Delete score">❌</button>
+                  </td>
                 </tr>
               ))}
             </tbody>

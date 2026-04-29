@@ -172,8 +172,28 @@ export function useGameLoop(canvasRef) {
     // Get or compute path
     if (pathRef.current.length === 0) {
       const newPath = computePath();
-      if (newPath.length === 0) { endGame(); return; }
-      pathRef.current = newPath;
+      if (!newPath || newPath.length === 0) {
+        // FAILSAFE: If no path to food, try ANY safe move to survive
+        let survived = false;
+        const DIRS = [[-1,0],[1,0],[0,-1],[0,1]];
+        const head = snake[0];
+        const blocked = new Set(obsRef.current);
+        snake.slice(1).forEach(b => blocked.add(`${b[0]},${b[1]}`));
+        for (const [dr, dc] of DIRS) {
+          const nr = head[0]+dr, nc = head[1]+dc;
+          if (nr>=0 && nr<ROWS && nc>=0 && nc<COLS && !blocked.has(`${nr},${nc}`)) {
+            pathRef.current = [[dr, dc]];
+            survived = true;
+            break;
+          }
+        }
+        if (!survived) {
+          endGame();
+          return;
+        }
+      } else {
+        pathRef.current = newPath;
+      }
     }
 
     const [dr,dc] = pathRef.current.shift();
