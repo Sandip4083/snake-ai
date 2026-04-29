@@ -3,26 +3,14 @@
   "buildCommand": "cd client && npm install && npm run build",
   "outputDirectory": "client/dist",
   "functions": {
-    "api/index.py": {
-      "runtime": "python3.12",
-      "maxDuration": 15
-    },
     "api/scores.js": {
       "maxDuration": 10
     }
   },
   "routes": [
     {
-      "src": "/api/move",
-      "dest": "/api/index.py"
-    },
-    {
       "src": "/api/scores(.*)",
       "dest": "/api/scores.js"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/index.py"
     },
     {
       "src": "/(.*)",
