@@ -317,48 +317,95 @@ select option { background: #151b2e; }
   position: relative;
   flex: 1;
   min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
+
+/* Status bar above the canvas */
+.canvas-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border2);
+  border-bottom: none;
+  border-radius: var(--radius) var(--radius) 0 0;
+  font-size: 0.78rem;
+  min-height: 34px;
+}
+.status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.status-dot--green { background: var(--primary); box-shadow: 0 0 6px var(--primary); animation: pulse-dot 1.5s ease-in-out infinite; }
+.status-dot--red   { background: var(--danger);  box-shadow: 0 0 6px var(--danger); }
+.status-dot--muted { background: var(--muted); }
+.status-text  { color: var(--muted); font-size: 0.76rem; }
+.status-algo  { color: var(--muted); font-size: 0.72rem; font-family: 'Orbitron', sans-serif; letter-spacing: 0.5px; }
+
 .game-canvas {
   display: block;
-  border-radius: var(--radius);
+  border-radius: 0 0 var(--radius) var(--radius);
   border: 1px solid var(--border);
   box-shadow: 0 0 60px rgba(0,255,136,0.07), var(--shadow);
 }
 .canvas-overlay {
   position: absolute;
-  inset: 0;
+  left: 0; right: 0;
+  bottom: 0;
+  top: 34px; /* below status bar */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 10px;
   background: rgba(7,11,20,0.88);
-  border-radius: var(--radius);
+  border-radius: 0 0 var(--radius) var(--radius);
   backdrop-filter: blur(6px);
 }
 .overlay-snake { font-size: 4rem; animation: float 3s ease-in-out infinite; filter: drop-shadow(0 0 16px rgba(0,255,136,0.4)); }
 .overlay-title { font-family: 'Orbitron', sans-serif; font-size: 1.6rem; font-weight: 900; color: var(--primary); letter-spacing: 2px; }
-.overlay-hint  { color: var(--muted); font-size: 0.9rem; }
+.overlay-hint  { color: var(--muted); font-size: 0.88rem; }
 .overlay-hint strong { color: var(--primary); }
-.overlay-tips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px; }
+.overlay-tips {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  width: 100%;
+  max-width: 280px;
+}
+.tip-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 .tip-badge {
-  padding: 4px 10px;
+  padding: 3px 10px;
   background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
   border-radius: 20px;
   font-size: 0.72rem;
-  color: var(--muted);
+  color: var(--text);
+  white-space: nowrap;
+  min-width: 68px;
+  text-align: center;
 }
+.tip-text { font-size: 0.72rem; color: var(--muted); }
 
 /* ── Game Over Modal ─────────────────────────────────── */
 .gameover-overlay {
   position: absolute;
-  inset: 0;
+  left: 0; right: 0; bottom: 0;
+  top: 34px; /* below status bar */
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(7,11,20,0.92);
-  border-radius: var(--radius);
+  border-radius: 0 0 var(--radius) var(--radius);
   backdrop-filter: blur(8px);
   z-index: 10;
   animation: fadeIn 0.3s ease;
@@ -562,14 +609,20 @@ select option { background: #151b2e; }
 
 /* ── Footer ──────────────────────────────────────────── */
 .app-footer {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-top: 40px;
-  padding: 20px 0 8px;
+  padding: 18px 0 8px;
   border-top: 1px solid rgba(255,255,255,0.05);
   color: var(--muted);
-  font-size: 0.8rem;
-  line-height: 1.7;
+  font-size: 0.78rem;
 }
+.app-footer strong { color: var(--primary); }
+.footer-sep { color: rgba(255,255,255,0.15); }
+/* Keep old selector for compat */
 .footer-author strong { color: var(--primary); }
 
 /* ── Animations ──────────────────────────────────────── */

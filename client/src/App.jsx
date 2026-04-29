@@ -12,12 +12,12 @@ export default function App() {
 
   const handleScoreSubmit = async (name) => {
     try {
-      await fetch('/api/scores', {
+      const res = await fetch('/api/scores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, score, algorithm: curSettings.algorithm, level: curSettings.level }),
       });
-      setLbKey(k => k + 1);
+      if (res.ok) setLbKey(k => k + 1);
     } catch (e) {
       console.error('Score save failed:', e);
     }
@@ -25,7 +25,7 @@ export default function App() {
 
   return (
     <div className="app">
-      {/* Header */}
+      {/* ── Header ── */}
       <header className="app-header">
         <div className="app-logo">
           <span className="logo-snake">🐍</span>
@@ -34,37 +34,85 @@ export default function App() {
             <p className="app-sub">7 Algorithms · Python FastAPI · Real-time Pathfinding</p>
           </div>
         </div>
-        <div className="app-header-badges">
+        <div className="app-header-right">
           <span className="badge badge-green">● Live</span>
-          <a href="https://github.com/Sandip4083/snake-ai" target="_blank" rel="noreferrer" className="badge badge-ghost">GitHub</a>
+          <a href="https://github.com/Sandip4083/snake-ai" target="_blank" rel="noreferrer" className="badge badge-ghost">⭐ GitHub</a>
         </div>
       </header>
 
-      {/* Main */}
+      {/* ── Main ── */}
       <main className="app-main">
         {/* Left panel */}
-        <div className="left-panel">
+        <aside className="left-panel">
           <Sidebar onStart={startGame} isRunning={isRunning} />
-          <HUD score={score} timeLeft={timeLeft} curSettings={curSettings} isFetching={isFetching} foodsEaten={foodsEaten} />
-        </div>
+          <HUD
+            score={score}
+            timeLeft={timeLeft}
+            curSettings={curSettings}
+            isFetching={isFetching}
+            foodsEaten={foodsEaten}
+          />
+        </aside>
 
         {/* Canvas */}
         <div className="canvas-area">
+          {/* Status bar above canvas */}
+          <div className="canvas-status-bar">
+            {isRunning && (
+              <>
+                <span className="status-dot status-dot--green" />
+                <span className="status-text">
+                  {isFetching ? '🤖 AI Computing Path…' : '▶ Running'}
+                </span>
+              </>
+            )}
+            {!isRunning && !gameOver && (
+              <>
+                <span className="status-dot status-dot--muted" />
+                <span className="status-text">Waiting to start</span>
+              </>
+            )}
+            {gameOver && (
+              <>
+                <span className="status-dot status-dot--red" />
+                <span className="status-text">Game Over — Score: {score}</span>
+              </>
+            )}
+            <span className="status-algo" style={{ marginLeft: 'auto' }}>
+              {isRunning || gameOver ? `${curSettings.algorithm?.toUpperCase()} · Lv ${curSettings.level?.replace('level','')}` : ''}
+            </span>
+          </div>
+
           <canvas ref={canvasRef} width={500} height={500} className="game-canvas" />
 
+          {/* Idle overlay */}
           {!isRunning && !gameOver && (
             <div className="canvas-overlay">
               <span className="overlay-snake">🐍</span>
               <h2 className="overlay-title">AI Snake</h2>
-              <p className="overlay-hint">Select an algorithm & press <strong>Start Game</strong></p>
+              <p className="overlay-hint">Pick an algorithm & press <strong>Start Game</strong></p>
               <div className="overlay-tips">
-                <span className="tip-badge">🔵 BFS = Shortest path</span>
-                <span className="tip-badge">⭐ A* = Fastest optimal</span>
-                <span className="tip-badge">🎲 Random = Chaos mode</span>
+                <div className="tip-row">
+                  <span className="tip-badge">🔵 BFS</span>
+                  <span className="tip-text">Shortest path, always safe</span>
+                </div>
+                <div className="tip-row">
+                  <span className="tip-badge">⭐ A*</span>
+                  <span className="tip-text">Heuristic — fastest optimal</span>
+                </div>
+                <div className="tip-row">
+                  <span className="tip-badge">🎲 Random</span>
+                  <span className="tip-text">Chaotic fun with BFS safety net</span>
+                </div>
+                <div className="tip-row">
+                  <span className="tip-badge">🔴 DFS</span>
+                  <span className="tip-text">Deep dives, capped at 300 steps</span>
+                </div>
               </div>
             </div>
           )}
 
+          {/* Game Over overlay */}
           {gameOver && (
             <GameOver
               score={score}
@@ -77,13 +125,14 @@ export default function App() {
         </div>
       </main>
 
-      {/* Leaderboard */}
+      {/* ── Leaderboard ── */}
       <Leaderboard refreshKey={lbKey} />
 
-      {/* Footer */}
+      {/* ── Footer ── */}
       <footer className="app-footer">
-        <p>Built with 🐍 Python FastAPI · ⚛️ React · 🍃 MongoDB · ▲ Vercel</p>
-        <p className="footer-author">By <strong>Sandip Kumar Sah</strong></p>
+        <span>🐍 Python FastAPI · ⚛️ React · 🍃 MongoDB · ▲ Vercel</span>
+        <span className="footer-sep">·</span>
+        <span>Built by <strong>Sandip Kumar Sah</strong></span>
       </footer>
     </div>
   );
