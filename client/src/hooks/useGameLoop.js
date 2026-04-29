@@ -196,7 +196,11 @@ export function useGameLoop(canvasRef) {
       }
     }
 
-    const [dr,dc] = pathRef.current.shift();
+    if (!pathRef.current || pathRef.current.length === 0) return; // double check
+
+    const nextMove = pathRef.current.shift();
+    if (!nextMove) return;
+    const [dr, dc] = nextMove;
     const nh  = [snake[0][0]+dr, snake[0][1]+dc];
     const nhk = `${nh[0]},${nh[1]}`;
 
